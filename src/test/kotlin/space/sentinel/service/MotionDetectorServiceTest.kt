@@ -25,11 +25,8 @@ internal class MotionDetectorServiceTest {
         val pirReader = mock<PIRReader> {
             on { read() }.doReturn(Flux.just(PinState.HIGH))
         }
-        val motionDetectorService = MotionDetectorService(pirReader, cameraReader)
 
-        val result = motionDetectorService.detect()
-
-        StepVerifier.create(result)
+        StepVerifier.create(MotionDetectorService(pirReader, cameraReader).detect())
                 .consumeNextWith {
                     assertEquals(it.image.get(), frame)
                     assertEquals(it::class.java, MotionDetectAlert::class.java)
@@ -42,13 +39,9 @@ internal class MotionDetectorServiceTest {
         val pirReader = mock<PIRReader> {
             on { read() }.doReturn(Flux.just(PinState.LOW))
         }
-        val motionDetectorService = MotionDetectorService(pirReader, cameraReader)
 
-        val result = motionDetectorService.detect()
-
-        StepVerifier.create(result)
+        StepVerifier.create(MotionDetectorService(pirReader, cameraReader).detect())
                 .consumeNextWith {
-                    println(it)
                     assertEquals(it.image.isEmpty, true)
                     assertEquals(it::class.java, Chill::class.java)
                 }
