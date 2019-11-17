@@ -1,30 +1,56 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
 group = "space.sentinel"
 version = "1.0-SNAPSHOT"
+val kotlinVersion = "1.3.40"
 
 plugins {
     application
     kotlin("jvm") version "1.3.40"
     `maven-publish`
+    id("com.github.johnrengelman.shadow") version "5.2.0"
 }
 
 application {
-    mainClassName = "space.hajnal.App"
+    mainClassName = "space.sentinel.AppKt"
 }
 
 dependencies {
     implementation(kotlin("stdlib"))
     implementation(kotlin("stdlib-jdk8"))
+    implementation("org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion")
 
     implementation("com.pi4j:pi4j-core:1.2")
     implementation("io.projectreactor:reactor-core:3.3.0.RELEASE")
+//    implementation("io.projectreactor.netty:reactor-netty:0.9.1.RELEASE")
+    // no arm support yet
+//    implementation( "io.netty:netty-transport-native-epoll:4.1.43.Final:arm_32")
+    implementation("org.eclipse.jetty:jetty-reactive-httpclient:1.0.3")
+
+
     implementation("org.slf4j:slf4j-api:1.7.26")
     implementation("ch.qos.logback:logback-classic:0.9.26")
     implementation("ch.qos.logback:logback-core:0.9.26")
     implementation("javax.xml.bind:jaxb-api:2.3.0")
-    implementation("org.bytedeco:javacv-platform:1.5.2")
     implementation("io.github.config4k:config4k:0.4.1")
+    implementation("org.bytedeco:javacv-platform:1.5.2")
+    {
+        exclude("org.bytedeco", "openblas")
+        exclude("org.bytedeco", "opencv")
+        exclude("org.bytedeco", "flycapture")
+        exclude("org.bytedeco", "videoinput")
+        exclude("org.bytedeco", "artoolkitplus")
+        exclude("org.bytedeco", "flandmark")
+        exclude("org.bytedeco", "leptonica")
+        exclude("org.bytedeco", "tesseract")
+        exclude("org.bytedeco", "libfreenect")
+        exclude("org.bytedeco", "libfreenect2")
+        exclude("org.bytedeco", "librealsense")
+        exclude("org.bytedeco", "librealsense2")
+        exclude("org.bytedeco", "libdc1394")
+        exclude("com.google.android", "android")
+    }
 
     implementation("$group:PIRReader:$version")
     implementation("$group:CameraReader:$version")
@@ -90,7 +116,6 @@ publishing {
     }
 }
 
-
 val fatJar = task("fatJar", type = Jar::class) {
     manifest {
         attributes["Implementation-Title"] = "Sentinel Pi"
@@ -105,13 +130,26 @@ tasks.withType<KotlinCompile> {
     kotlinOptions.jvmTarget = "1.8"
 }
 
-tasks {
+tasks.register<Jar>("uberJar") {
+    archiveClassifier.set("uber")
 
+    from(sourceSets.main.get().output)
+
+    dependsOn(configurations.runtimeClasspath)
+    from({
+        configurations.runtimeClasspath.get().filter { it.name.endsWith("jar") }.map { zipTree(it) }
+    })
+}
+
+tasks {
     "build" {
         dependsOn(fatJar)
     }
     "test"(Test::class) {
         useJUnitPlatform()
     }
+}
 
+tasks.withType<ShadowJar> {
+    //    minimize()
 }
