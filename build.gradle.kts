@@ -27,7 +27,7 @@ dependencies {
     // no arm support yet
 //    implementation( "io.netty:netty-transport-native-epoll:4.1.43.Final:arm_32")
     implementation("org.eclipse.jetty:jetty-reactive-httpclient:1.0.3")
-
+    implementation("com.fasterxml.jackson.core:jackson-databind:2.0.1")
 
     implementation("org.slf4j:slf4j-api:1.7.26")
     implementation("ch.qos.logback:logback-classic:0.9.26")
@@ -37,7 +37,8 @@ dependencies {
     implementation("org.bytedeco:javacv-platform:1.5.2")
     {
         exclude("org.bytedeco", "openblas")
-        exclude("org.bytedeco", "opencv")
+//        exclude("org.bytedeco", "opencv")
+//        exclude("org.bytedeco", "ffmpeg")
         exclude("org.bytedeco", "flycapture")
         exclude("org.bytedeco", "videoinput")
         exclude("org.bytedeco", "artoolkitplus")
@@ -130,17 +131,6 @@ tasks.withType<KotlinCompile> {
     kotlinOptions.jvmTarget = "1.8"
 }
 
-tasks.register<Jar>("uberJar") {
-    archiveClassifier.set("uber")
-
-    from(sourceSets.main.get().output)
-
-    dependsOn(configurations.runtimeClasspath)
-    from({
-        configurations.runtimeClasspath.get().filter { it.name.endsWith("jar") }.map { zipTree(it) }
-    })
-}
-
 tasks {
     "build" {
         dependsOn(fatJar)
@@ -152,4 +142,6 @@ tasks {
 
 tasks.withType<ShadowJar> {
     //    minimize()
+    exclude("org.bytedeco.opencv")
+    exclude("org.bytedeco.ffmpeg")
 }
